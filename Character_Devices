@@ -1,0 +1,75 @@
+
+ls -lZA /dev/ 
+
+SourceCode : https://elixir.bootlin.com/linux/v6.17-rc3/source/fs/char_dev.c
+https://elixir.bootlin.com/linux/v6.17-rc3/source/include/linux/cdev.h
+
+#define CHRDEV_MAJOR_HASH_SIZE 255
+
+static struct char_device_struct {
+	struct char_device_struct *next;
+	unsigned int major;
+	unsigned int baseminor;
+	int minorct;
+	char name[64];
+	struct cdev *cdev;		/* will die */
+} *chrdevs[CHRDEV_MAJOR_HASH_SIZE];
+
+/* index in the above */
+static inline int major_to_index(unsigned major)
+{
+	return major % CHRDEV_MAJOR_HASH_SIZE;
+}
+
+void chrdev_show(struct seq_file *f, off_t offset)
+{
+	struct char_device_struct *cd;
+
+	mutex_lock(&chrdevs_lock);
+	for (cd = chrdevs[major_to_index(offset)]; cd; cd = cd->next) {
+		if (cd->major == offset)
+			seq_printf(f, "%3d %s\n", cd->major, cd->name);
+	}
+	mutex_unlock(&chrdevs_lock);
+}
+
+Output : 
+All /dev 
+emulator_car64_x86_64:/ # ls -lZA /dev/                                                                                                                                                                    
+total 4
+drwx--x--x  3 root        root        u:object_r:properties_device:s0                7280 2025-08-25 15:45 __properties__
+crw-rw-rw-  1 root        root        u:object_r:ashmem_device:s0                 10, 124 2025-08-25 15:45 ashmem
+crw-rw-rw-  1 root        root        u:object_r:ashmem_libcutils_device:s0       10, 124 2025-08-25 15:45 ashmem47b1adee-de61-476e-80a8-aeff3579ce45
+lrwxrwxrwx  1 root        root        u:object_r:binder_device:s0                      20 2025-08-25 15:45 binder -> /dev/binderfs/binder
+drwxr-xr-x  4 root        root        u:object_r:binderfs:s0                            0 2025-08-25 15:45 binderfs
+dr-xr-xr-x  3 system      system      u:object_r:cgroup:s0                              0 2025-08-25 15:45 blkio
+drwxr-xr-x  6 root        root        u:object_r:block_device:s0                     2280 2025-08-25 15:45 block
+lrwxrwxrwx  1 root        root        u:object_r:bt_device:s0                          13 2025-08-25 15:45 bluetooth0 -> /dev/vport7p3
+drwxr-xr-x  3 root        root        u:object_r:device:s0                             60 2025-08-25 15:45 boringssl
+drwxr-xr-x  3 root        root        u:object_r:device:s0                             60 2025-08-25 15:45 bus
+crw-------  1 root        root        u:object_r:console_device:s0                 5,   1 2025-08-25 15:45 console
+crw-------  1 root        root        u:object_r:device:s0                        10, 122 2025-08-25 15:45 cpu_dma_latency
+dr-xr-xr-x 12 system      system      u:object_r:cgroup:s0                              0 2025-08-25 15:45 cpuctl
+dr-xr-xr-x  9 system      system      u:object_r:cgroup:s0                              0 2025-08-25 15:45 cpuset
+crw-------  1 root        root        u:object_r:dm_device:s0                     10, 236 2025-08-25 15:45 device-mapper
+.....
+
+
+Showing /dev/input
+emulator_car64_x86_64:/ # ls -lZA /dev/input/                                                                                                                                                              
+total 0
+crw-rw---- 1 root input u:object_r:input_device:s0  13,  64 2025-08-25 15:45 event0
+crw-rw---- 1 root input u:object_r:input_device:s0  13,  65 2025-08-25 15:45 event1
+crw-rw---- 1 root input u:object_r:input_device:s0  13,  74 2025-08-25 15:45 event10
+crw-rw---- 1 root input u:object_r:input_device:s0  13,  75 2025-08-25 15:45 event11
+crw-rw---- 1 root input u:object_r:input_device:s0  13,  76 2025-08-25 15:45 event12
+crw-rw---- 1 root input u:object_r:input_device:s0  13,  77 2025-08-25 15:45 event13
+crw-rw---- 1 root input u:object_r:input_device:s0  13,  66 2025-08-25 15:45 event2
+crw-rw---- 1 root input u:object_r:input_device:s0  13,  67 2025-08-25 15:45 event3
+crw-rw---- 1 root input u:object_r:input_device:s0  13,  68 2025-08-25 15:45 event4
+crw-rw---- 1 root input u:object_r:input_device:s0  13,  69 2025-08-25 15:45 event5
+crw-rw---- 1 root input u:object_r:input_device:s0  13,  70 2025-08-25 15:45 event6
+crw-rw---- 1 root input u:object_r:input_device:s0  13,  71 2025-08-25 15:45 event7
+crw-rw---- 1 root input u:object_r:input_device:s0  13,  72 2025-08-25 15:45 event8
+crw-rw---- 1 root input u:object_r:input_device:s0  13,  73 2025-08-25 15:45 event9
+emulator_car64_x86_64:/ #
